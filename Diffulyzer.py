@@ -127,7 +127,7 @@ def calc_diffusion(data):
 		r_sq.append(np.mean(grouped[di]))
 		d_end = max(d_end, di)
 
-	popt, pcov = curve_fit(fit_func, d, r_sq, bounds=(0, [4.0, 2.0]))
+	popt, pcov = curve_fit(fit_func, d, r_sq, bounds=(0, [10.0, 2.0]))
 	D = popt[0]
 	exponent = popt[1]
 	return D, exponent
