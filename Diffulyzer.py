@@ -6,6 +6,10 @@ from scipy.optimize import curve_fit
 import numpy as np
 
 
+def larmor_radius(E, Brms):
+	return E / (c_light * eplus * Brms)
+
+
 # returns list of candidates
 def create_candidates(num_candidates, EMin, EMax):
 	source = Source()
@@ -92,7 +96,7 @@ def plot_rms(data, plot_title=''):
 	print('< r² >  = ' + str(r_sq_avg))
 	print('sigma_r = ' + str(sqrt(abs(r_sq_avg - r_avg**2))))
 
-	popt, pcov = curve_fit(fit_func, d, r_sq, bounds=(0, [4.0, 2.0]))
+	popt, pcov = curve_fit(fit_func, d, r_sq, bounds=(0, [20.0, 2.0]))
 	D = popt[0]
 	exponent = popt[1]
 	print()
@@ -101,6 +105,17 @@ def plot_rms(data, plot_title=''):
 	print('exponent= ' + str(exponent))
 	print()
 	print('r²     ~= ' + str(D) + ' d ^ ' + str(exponent))
+
+	#sort d and r_sq ordered by d, maybe needed on some system setup
+	for j in range(len(d)-1):
+		for i in range(len(d)-1):
+			if(d[i]>d[i+1]):
+				temp = d[i]
+				d[i] = d[i+1]
+				d[i+1] = temp
+				temp2 = r_sq[i]
+				r_sq[i] = r_sq[i+1]
+				r_sq[i+1] = temp2
 
 	figure(figsize=(9, 5))
 	title(plot_title)
@@ -127,7 +142,7 @@ def calc_diffusion(data):
 		r_sq.append(np.mean(grouped[di]))
 		d_end = max(d_end, di)
 
-	popt, pcov = curve_fit(fit_func, d, r_sq, bounds=(0, [10.0, 2.0]))
+	popt, pcov = curve_fit(fit_func, d, r_sq, bounds=(0, [20.0, 2.0]))
 	D = popt[0]
 	exponent = popt[1]
 	return D, exponent
