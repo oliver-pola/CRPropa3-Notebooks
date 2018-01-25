@@ -10,6 +10,14 @@ def larmor_radius(E, Brms):
 	return E / (c_light * eplus * Brms)
 
 
+def B_from_larmor(E, r_L):
+	return E / (c_light * eplus * r_L)
+
+
+def E_from_larmor(Brms, r_L):
+	return r_L * c_light * eplus * Brms
+
+
 # returns list of candidates
 def create_candidates(num_candidates, EMin, EMax):
 	source = Source()
