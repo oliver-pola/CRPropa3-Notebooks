@@ -1,3 +1,4 @@
+from __future__ import print_function
 from crpropa import *
 from pylab import *
 from mpl_toolkits.mplot3d import axes3d
@@ -90,6 +91,16 @@ def fit_func(x, a, b):
 	return a*(x**b)
 
 
+def fit_poly5(x, a, b, c, d, e, f):
+	# why is this so hard avoiding type error about numpy.float64 being converted to int
+	r = np.add(a, np.multiply(b, x))
+	r = np.add(r, np.multiply(c, np.power(x, 2.0)))
+	r = np.add(r, np.multiply(d, np.power(x, 3.0)))
+	r = np.add(r, np.multiply(e, np.power(x, 4.0)))
+	r = np.add(r, np.multiply(f, np.power(x, 5.0)))
+	return r
+
+
 def plot_rms(data, plot_title=''):
 	return plot_rsq(data, plot_title)
 
@@ -99,21 +110,23 @@ def plot_rsq(data, plot_title=''):
 	grouped = defaultdict(list)
 	d = []
 	r_sq = []
+	sigma_r_sq = []
 	d_end = 0
 	for di, X, Y, Z in data:
 		grouped[di].append(X**2 + Y**2 + Z**2)
 	for di in grouped:
 		d.append(di)
 		r_sq.append(np.mean(grouped[di]))
+		sigma_r_sq.append(np.std(grouped[di]))
 		d_end = max(d_end, di)
 	print('After last step:')
 	print('r_min   = ' + str(sqrt(np.min(grouped[d_end]))))
 	print('r_max   = ' + str(sqrt(np.max(grouped[d_end]))))
 	r_avg = np.mean(sqrt(grouped[d_end]))
 	print('< r >   = ' + str(r_avg))
-	print('< r >²  = ' + str(r_avg**2))
+	print(u'< r >²  = ' + str(r_avg**2))
 	r_sq_avg = np.mean(grouped[d_end])
-	print('< r² >  = ' + str(r_sq_avg))
+	print(u'< r² >  = ' + str(r_sq_avg))
 	print('sigma_r = ' + str(sqrt(abs(r_sq_avg - r_avg**2))))
 
 	popt, pcov = curve_fit(fit_func, d, r_sq, bounds=(0, [30.0, 3.0]))
@@ -124,7 +137,7 @@ def plot_rsq(data, plot_title=''):
 	print('D       = ' + str(D))
 	print('exponent= ' + str(exponent))
 	print()
-	print('r²     ~= ' + str(D) + ' d ^ ' + str(exponent))
+	print(u'r²     ~= ' + str(D) + ' d ^ ' + str(exponent))
 
 	#sort d and r_sq ordered by d, maybe needed on some system setup
 	for j in range(len(d)-1):
@@ -139,10 +152,11 @@ def plot_rsq(data, plot_title=''):
 
 	figure(figsize=(9, 5))
 	title(plot_title)
+	errorbar(d, r_sq, yerr=sigma_r_sq, color='b', alpha=0.3)
 	plot(d, r_sq, 'b-')
 	plot(d, fit_func(d, D, exponent), 'b:', label='%.3f d ^ %.3f' % tuple(popt))
 	grid()
-	ylabel('$<$r²$>$ [Mpc²]')
+	ylabel(u'$<$r²$>$ [Mpc²]')
 	xlabel('d [Mpc]')
 	legend()
 	show()
@@ -154,21 +168,23 @@ def plot_rsq_par(data, plot_title=''):
 	grouped = defaultdict(list)
 	d = []
 	z_sq = []
+	sigma_z_sq = []
 	d_end = 0
 	for di, X, Y, Z in data:
 		grouped[di].append(Z**2)
 	for di in grouped:
 		d.append(di)
 		z_sq.append(np.mean(grouped[di]))
+		sigma_z_sq.append(np.std(grouped[di]))
 		d_end = max(d_end, di)
 	print('After last step:')
 	print('z_min   = ' + str(sqrt(np.min(grouped[d_end]))))
 	print('z_max   = ' + str(sqrt(np.max(grouped[d_end]))))
 	z_avg = np.mean(sqrt(grouped[d_end]))
 	print('< z >   = ' + str(z_avg))
-	print('< z >²  = ' + str(z_avg**2))
+	print(u'< z >²  = ' + str(z_avg**2))
 	z_sq_avg = np.mean(grouped[d_end])
-	print('< z² >  = ' + str(z_sq_avg))
+	print(u'< z² >  = ' + str(z_sq_avg))
 	print('sigma_z = ' + str(sqrt(abs(z_sq_avg - z_avg**2))))
 
 	popt, pcov = curve_fit(fit_func, d, z_sq, bounds=(0, [30.0, 3.0]))
@@ -179,7 +195,7 @@ def plot_rsq_par(data, plot_title=''):
 	print('D_par   = ' + str(D_par))
 	print('exp_par = ' + str(exp_par))
 	print()
-	print('z²     ~= ' + str(D_par) + ' d ^ ' + str(exp_par))
+	print(u'z²     ~= ' + str(D_par) + ' d ^ ' + str(exp_par))
 
 	#sort d and r_sq ordered by d, maybe needed on some system setup
 	for j in range(len(d)-1):
@@ -194,10 +210,11 @@ def plot_rsq_par(data, plot_title=''):
 
 	figure(figsize=(9, 5))
 	title(plot_title)
+	errorbar(d, z_sq, yerr=sigma_z_sq, color='b', alpha=0.3)
 	plot(d, z_sq, 'b-')
 	plot(d, fit_func(d, D_par, exp_par), 'b:', label='%.3f d ^ %.3f' % tuple(popt))
 	grid()
-	ylabel('$<$z²$>$ [Mpc²]')
+	ylabel(u'$<$z²$>$ [Mpc²]')
 	xlabel('d [Mpc]')
 	legend()
 	show()
@@ -210,21 +227,23 @@ def plot_rsq_ort(data, plot_title=''):
 	grouped = defaultdict(list)
 	d = []
 	R_sq = []
+	sigma_R_sq = []
 	d_end = 0
 	for di, X, Y, Z in data:
 		grouped[di].append(X**2 + Y**2)
 	for di in grouped:
 		d.append(di)
 		R_sq.append(np.mean(grouped[di]))
+		sigma_R_sq.append(np.std(grouped[di]))
 		d_end = max(d_end, di)
 	print('After last step:')
 	print('R_min   = ' + str(sqrt(np.min(grouped[d_end]))))
 	print('R_max   = ' + str(sqrt(np.max(grouped[d_end]))))
 	R_avg = np.mean(sqrt(grouped[d_end]))
 	print('< R >   = ' + str(R_avg))
-	print('< R >²  = ' + str(R_avg**2))
+	print(u'< R >²  = ' + str(R_avg**2))
 	R_sq_avg = np.mean(grouped[d_end])
-	print('< R² >  = ' + str(R_sq_avg))
+	print(u'< R² >  = ' + str(R_sq_avg))
 	print('sigma_R = ' + str(sqrt(abs(R_sq_avg - R_avg**2))))
 
 	popt, pcov = curve_fit(fit_func, d, R_sq, bounds=(0, [30.0, 3.0]))
@@ -235,7 +254,7 @@ def plot_rsq_ort(data, plot_title=''):
 	print('D_ort   = ' + str(D_ort))
 	print('exp_ort = ' + str(exp_ort))
 	print()
-	print('R²     ~= ' + str(D_ort) + ' d ^ ' + str(exp_ort))
+	print(u'R²     ~= ' + str(D_ort) + ' d ^ ' + str(exp_ort))
 
 	#sort d and r_sq ordered by d, maybe needed on some system setup
 	for j in range(len(d)-1):
@@ -250,10 +269,11 @@ def plot_rsq_ort(data, plot_title=''):
 
 	figure(figsize=(9, 5))
 	title(plot_title)
+	errorbar(d, R_sq, yerr=sigma_R_sq, color='b', alpha=0.3)
 	plot(d, R_sq, 'b-')
 	plot(d, fit_func(d, D_ort, exp_ort), 'b:', label='%.3f d ^ %.3f' % tuple(popt))
 	grid()
-	ylabel('$<$R²$>$ [Mpc²]')
+	ylabel(u'$<$R²$>$ [Mpc²]')
 	xlabel('d [Mpc]')
 	legend()
 	show()
