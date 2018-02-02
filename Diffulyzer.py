@@ -21,12 +21,12 @@ def E_from_larmor(Brms, r_L):
 
 
 # returns list of candidates
-def create_candidates(num_candidates, EMin, EMax):
+def create_candidates(num_candidates, EMin, EMax, origin=Vector3d(0, 0, 0)*Mpc):
 	source = Source()
 	source.add(SourceParticleType(nucleusId(1, 1)))
 	source.add(SourcePowerLawSpectrum(EMin, EMax, -1))
 	source.add(SourceIsotropicEmission())
-	source.add(SourcePosition(Vector3d(0, 0, 0)*Mpc))
+	source.add(SourcePosition(origin))
 	candidates = []
 	for i in range(0,num_candidates):
 		candidates.append(source.getCandidate())
@@ -51,11 +51,16 @@ def create_prop(grid_size, grid_spacing, Brms, lMin, lMax, alpha, B_z = 0):
 
 
 # simulates combined B field setting, return data
-def sim(num_candidates, num_samples, max_trajectory_length, EMin, EMax, grid_size, grid_spacing, Brms, lMin, lMax, alpha, B_z = 0):
+def sim(num_candidates, num_samples, max_trajectory_length, EMin, EMax, grid_size, grid_spacing, Brms, lMin, lMax, alpha, B_z = 0, origin=Vector3d(0, 0, 0)*Mpc):
 	sync_step = max_trajectory_length / num_samples
-	candidates = create_candidates(num_candidates, EMin, EMax)
+	candidates = create_candidates(num_candidates, EMin, EMax, origin)
 	prop = create_prop(grid_size, grid_spacing, Brms, lMin, lMax, alpha, B_z)
 	data = np.empty([0,4])
+	#write starting position
+	for c in candidates:
+		pos = c.current.getPosition() - c.source.getPosition()
+		data = np.append(data, [[0, pos.getX(), pos.getY(), pos.getZ()]], axis=0)
+	#simulate
 	for s in range(1,num_samples+1):
 		stop = MaximumTrajectoryLength(s * sync_step)
 		for c in candidates:
@@ -63,27 +68,29 @@ def sim(num_candidates, num_samples, max_trajectory_length, EMin, EMax, grid_siz
 			while c.isActive():
 				prop.process(c.get())
 				stop.process(c.get())
-			pos = c.current.getPosition()
+			pos = c.current.getPosition() - c.source.getPosition()
 			data = np.append(data, [[s * sync_step, pos.getX(), pos.getY(), pos.getZ()]], axis=0)
 	# data in Mpc
 	data = data / Mpc;
 	return data
 
 
-def plot_trajectory(data):
+# scale_max=0 for auto (each axis independent)
+def plot_trajectory(data, scale_max=10):
 	x, y, z = data[:,1], data[:,2], data[:,3]
 	fig = plt.figure(figsize=(9, 5))#plt.figaspect(0.5))
 	ax = fig.gca(projection='3d')# , aspect='equal'
 	ax.scatter(x,y,z, 'o', lw=0)
-	ax.set_xlabel('x [Mpc]', fontsize=18)
-	ax.set_ylabel('y [Mpc]', fontsize=18)
-	ax.set_zlabel('z [Mpc]', fontsize=18)
-	ax.set_xlim((-10, 10))
-	ax.set_ylim((-10, 10))
-	ax.set_zlim((-10, 10))
-	ax.xaxis.set_ticks((-10, -5, 0, 5, 10))
-	ax.yaxis.set_ticks((-10, -5, 0, 5, 10))
-	ax.zaxis.set_ticks((-10, -5, 0, 5, 10))
+	ax.set_xlabel('x [Mpc]', fontsize=12)
+	ax.set_ylabel('y [Mpc]', fontsize=12)
+	ax.set_zlabel('z [Mpc]', fontsize=12)
+	if scale_max != 0:
+		ax.set_xlim((-scale_max, scale_max))
+		ax.set_ylim((-scale_max, scale_max))
+		ax.set_zlim((-scale_max, scale_max))
+		ax.xaxis.set_ticks(linspace(-scale_max, scale_max, 5))
+		ax.yaxis.set_ticks(linspace(-scale_max, scale_max, 5))
+		ax.zaxis.set_ticks(linspace(-scale_max, scale_max, 5))
 	show()
 	return
 
